@@ -20,6 +20,9 @@ import io.ktor.http.HttpStatusCode
 @Serializable
 @JsonIgnoreUnknownKeys
 data class Libro(val id: Int, val titulo: String, val autor: String)
+@Serializable
+data class LibroInput(val titulo: String, val autor: String)
+
 
 // Repositorio en memoria con datos de ejemplo
 val libros = mutableListOf(
@@ -72,18 +75,20 @@ fun Application.module() {
         }
 
         post("/libros") {
-            val libro = call.receive<Libro>()
-            val nuevoLibro = libro.copy(id = currentId++)
+            val libroInput = call.receive<LibroInput>()
+            val nuevoLibro = Libro(id = currentId++, titulo = libroInput.titulo, autor = libroInput.autor)
             libros.add(nuevoLibro)
             call.respond(HttpStatusCode.Created, nuevoLibro)
         }
+
 
         put("/libros/{id}") {
             val id = call.parameters["id"]?.toIntOrNull()
             if (id != null) {
                 val libroExistente = libros.find { it.id == id }
                 if (libroExistente != null) {
-                    val libroActualizado = call.receive<Libro>().copy(id = id)
+                    val libroInput = call.receive<LibroInput>()
+                    val libroActualizado = Libro(id = id, titulo = libroInput.titulo, autor = libroInput.autor)
                     libros[libros.indexOf(libroExistente)] = libroActualizado
                     call.respond(libroActualizado)
                 } else {
@@ -93,6 +98,7 @@ fun Application.module() {
                 call.respond(HttpStatusCode.BadRequest, "ID inválido")
             }
         }
+
 
         delete("/libros/{id}") {
             val id = call.parameters["id"]?.toIntOrNull()
